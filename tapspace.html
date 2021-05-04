@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Grid - Forsite</title>
+
+  <!-- Disable user scalability to override native touch gestures. -->
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="css/style.css">
+  <!-- <style>
+    html, body, #space {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      background: white;
+    }
+  </style> -->
+</head>
+<body>
+
+
+ <!-- Menu-->
+ <div class="mainmenu">Main Menu Minimized</div>
+ <div class="inspector">Inspector</div>
+
+
+ <!-- Canvas tapspace -->
+  <div id="space"></div>
+
+
+
+  <script src="ghoulog.js"></script>
+  <script src="tapspace.js"></script>
+  <script>
+    var space = new tapspace.Space()
+    var viewElement = document.getElementById('space')
+    var view = new tapspace.SpaceView(space)
+    view.mount(viewElement)
+
+    // Width and height of a grid tile
+    var SIDE = 128
+
+    // Snapping grid
+    var grid = new tapspace.geom.IGrid({
+      xStep: SIDE,
+      xPhase: SIDE / 2,
+      yStep: SIDE,
+      yPhase: SIDE / 2,
+      rotateStep: Math.PI / 2,
+      scaleStep: 10000,
+      scalePhase: 1
+    }, space)
+
+    // Load images
+    tapspace.preload([
+      'assets/crew.gif',
+      'assets/climbing.gif',
+      'assets/constructionmachine.gif',
+      'assets/edge.gif'
+    ], function (err, imgs) {
+      if (err) {
+        console.error(err)
+        throw err
+      }
+
+      var g = new tapspace.SpaceGroup(space)
+      var rows = Math.ceil(Math.sqrt(imgs.length))
+      var touchmode = { translate: true, scale: true, rotate: true }
+
+      imgs.forEach(function (img, i) {
+        // Create
+        var px = new tapspace.SpaceImage(img, g)
+
+        // Position & snap scale
+        var x = i % rows
+        var y = Math.floor(i / rows)
+        px.setSize(SIDE, SIDE)
+        px.translate(px.atMid(), grid.at(x, y))
+        px.snap(px.atMid(), grid)
+
+        // Define interaction
+        var touch = new tapspace.Touchable(view, px)
+        touch.start(touchmode)
+        touch.on('gesturestart', function () {
+          px.bringToFront()
+        })
+        touch.on('gestureend', function () {
+          px.snap(px.atMid(), grid)
+        })
+      })
+
+      // Initial view position
+      view.fitScale(g)
+      view.scale(view.atMid(), 1.618)
+
+      // Make view transformable
+      var tView = new tapspace.Touchable(view, view)
+      tView.start(touchmode)
+    })
+
+          // Allow zooming with mouse wheel
+          var wheeler = new tapspace.Wheelable(view, view)
+      wheeler.start({
+        scale: true
+      })
+  </script>
+</body>
+</html>
